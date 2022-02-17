@@ -1,21 +1,34 @@
 ---
 title:  'Coding Challenge #4'
 subtitle: 'SWORK 881'
-author:
-- name: Student -  [Your name goes here]
+author: 
+- name: Student -  [Talin Gharibian]
 output: html_document
 ---
 
+#install new packages nnet, MASS, quantreg, splines
+
+```{r}
+#install.packages("nnet", dependencies = T)
+#install.packages("MASS", dependencies = T)
+#install.packages("quantreg", dependencies = T)
+#install.packages("splines", dependencies = T)
+```
+
+
 ## load libraries
 ```{r}
-
+library(tidyverse)
+library(tidymodels)
+library(nnet)
+library(MASS)
+library(quantreg)
+library(splines)
 ```
 
 ## load dataset
 ```{r}
-
-
-
+data.01<-read_csv("Data/LHS_exercise_02102022.csv")
 ```
 
 
@@ -25,7 +38,9 @@ We will be creating new variables:
 `anxiety` = clincally significant symptoms of anxiety; score 3 or more on PHQ-4 items 1 & 2
 `depression` = clinically significant symptoms of depression; score of 3 or mroe on PHQ-4 items 3 & 4 
 `distress` = continuous PHQ-4 score; higher score indicate greater distress
-`distress_type` = multinomial variable: 0- none; 1- anxiety; 2- dep; 3- anxiety & dep
+
+`distress_type` = multinomial variable: 0- none; 1- anxiety; 2- dep; 3- anxiety & dep --> come up with a new variable called distress type that has 4 possible values
+
 (hint: use `str_c(var1, '', var2)` to concatenate two values by rows)
 `distress_cat` = categorizing distress score into min:4 ~ 'low'; 5:8 ~ 'mid'; 8:max ~ 'high'
 (hint: use `%in%`)
@@ -33,18 +48,47 @@ We will be creating new variables:
 
 
 ```{r}
+data.02 <- data.01%>%
+  mutate(anxiety = case_when(phq1_1 + phq2_1 >= 3 ~ 1,
+                           TRUE ~ 0),
+         depression = case_when(phq3_1 + phq4_1 >= 3 ~ 1,
+                           TRUE ~ 0),
+         distress = phq1_1 + phq2_1 + phq3_1 + phq4_1,
+         distress_type_pre = str_c(anxiety,depression),
+         distress_type = case_when(distress_type_pre == '00' ~ 0,
+                                   distress_type_pre == '10' ~ 1,
+                                   distress_type_pre == '01' ~ 2,
+                                   distress_type_pre == '11' ~ 3),
+         distress_cat = case_when(distress <= 4 ~ 'low',
+                                  distress %in% c(5,6,7,8) ~ 'mid',
+                                  distress >= 8 ~ 'high'),
+         age_sd = scale(age)
+         )
 
 
 ```
 
+```{r}
+ftable(data.02$distress_type)
+```
+
 Report frequency of `distress_type`
-> [ Answer goes here  ].
+
+0   1   2   3
+
+322  67  54 182
 
 _hint_: your **none** category must have $n=322$; if you do not have this, check your code again.
 
+```{r}
+ftable(data.02$distress_cat)
+```
 
 Report frequency of `distress_cat`
-> [ Answer goes here ].
+
+ high low mid
+             
+  111 344 170
 
 _hint_: your **mid** category must have $n=170$; if you do not have this, check your code again.
 
@@ -57,6 +101,20 @@ Use your typical list of independent variables (standardized age, sex, education
 _hint_: use `nnet` package's `multinom` function
 
 ```{r}
+#first change character to format type:
+data.02$distress_type = as.factor(data.02$distress_type)
+
+#relevel
+data.02$distress_type <- relevel(data.02$distress_type, ref= 1)
+
+#now we are ready for running multinomial logistic regression
+
+fit.mlr<- multinom(distress_type ~ age_sd + factor(sex) + factor(education), 
+                   data=data.02)
+
+#summary(fit.mlr)
+
+tidy(fit.mlr)
 
 ```
 
@@ -72,6 +130,20 @@ Focusing on those who reported both _anxiety_ **AND** _depression_ as your outco
 Run ordinal regression where DV is `distress_cat`. Use your typical list of independent variables (standardized age, sex, education).
 
 ```{r}
+#make sure your variable is a factor type
+
+data.02$distress_cat_factor <- as.factor(data.02$distress_cat)
+
+fit.olr<- polr(distress_cat_factor~
+                 age_sd+
+                 factor(sex), 
+               data=data.02,
+               Hess = TRUE)
+
+#Hess option is used to get standard errors
+
+tidy(fit.olr, conf.int = T, 
+     p.values = T)
 
 
 ```
@@ -86,7 +158,8 @@ To the best of your knowledge, provide explanation of the result.
 Run linear regression where DV is `distress`. For your standardized age variable, locate knot points at `-0.5`, `0`, and `0.5`. 
 
 ```{r}
-
+fit.01 <- lm(distress ~ age_sd + factor(sex) + factor(education), 
+                   data=data.02)
 ```
 
 Provide your interpretation below:
