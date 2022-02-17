@@ -121,7 +121,7 @@ tidy(fit.mlr)
 Please note your interpretation unit and your outcome unit must be the same. If needed, trasnform your output to facilitate  your interpretation.
 
 Focusing on those who reported both _anxiety_ **AND** _depression_ as your outcome level of interest, provide your interpretation below:
-> [Provide your interpretation here]
+> [I'm not sure.]
 
 
 ---
@@ -149,7 +149,7 @@ tidy(fit.olr, conf.int = T,
 ```
 To the best of your knowledge, provide explanation of the result. 
 
-> [Provide your description of the result here]
+> [I'm not sure]
 
 
 ---
@@ -160,16 +160,21 @@ Run linear regression where DV is `distress`. For your standardized age variable
 ```{r}
 fit.01 <- lm(distress ~ age_sd + factor(sex) + factor(education), 
                    data=data.02)
+
+summary(fit.01)
 ```
 
 Provide your interpretation below:
-> [Provide your interpretation here]
+> [Age and sex are significant in predicting distress. An increase in age is negatively associated with distress. 
 
 
 Run logistic regression where DV is `depression`. For your standardized age variable, locate knot points at  `-1`, `0`, and `1`. 
 
 ```{r}
-
+fit.02 <- glm(depression ~ age_sd + factor(sex) + factor(education), 
+                   family=binomial (link="logit"),
+              data=data.02)
+summary(fit.02)
 ```
 Provide your interpretation below:
-> [Provide your interpretation here]
+> [Standardized age is significant in predicting depression score. An increase in age is negatively associated with depression score.]
